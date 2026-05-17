@@ -4,26 +4,48 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ❌ Disable CSRF (needed for Postman / APIs)
                 .csrf(csrf -> csrf.disable())
 
-                // ✅ Allow all requests (no authentication required)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+
+                        // Public APIs
+                        .requestMatchers("/auth/**").permitAll()
+
+                        // ADMIN only
+                        .requestMatchers("/thali/**").hasRole("ADMIN")
+
+                        // USER + ADMIN
+                        .requestMatchers("/token/**").hasAnyRole("USER", "ADMIN")
+
+                        // USER + ADMIN
+                        .requestMatchers("/feedback/**").hasAnyRole("USER", "ADMIN")
+
+                        // Any logged-in user
+                        .anyRequest().authenticated()
                 )
 
-                // ❌ Disable default login page
+                .addFilterBefore(
+                        jwtFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
                 .formLogin(form -> form.disable())
 
-                // ❌ Disable basic auth popup
                 .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
