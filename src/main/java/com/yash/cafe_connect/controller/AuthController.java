@@ -1,6 +1,7 @@
 package com.yash.cafe_connect.controller;
 
 import com.yash.cafe_connect.dto.AuthRequest;
+import com.yash.cafe_connect.dto.LoginResponseDTO;
 import com.yash.cafe_connect.entity.User;
 import com.yash.cafe_connect.repository.UserRepository;
 import com.yash.cafe_connect.security.JwtUtil;
@@ -20,7 +21,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody AuthRequest authRequest) {
+    public LoginResponseDTO login(@RequestBody AuthRequest authRequest) {
 
         User user = userRepository.findAll()
                 .stream()
@@ -31,9 +32,15 @@ public class AuthController {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
-        return jwtUtil.generateToken(
+        String token = jwtUtil.generateToken(
                 user.getEmail(),
                 user.getRole()
+        );
+
+        return new LoginResponseDTO(
+                token,
+                user.getRole(),
+                "Login successful"
         );
     }
 }

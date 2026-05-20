@@ -1,12 +1,13 @@
 package com.yash.cafe_connect.service.impl;
 
+import com.yash.cafe_connect.dto.TokenResponseDTO;
+import com.yash.cafe_connect.entity.Thali;
 import com.yash.cafe_connect.entity.Token;
 import com.yash.cafe_connect.entity.User;
-import com.yash.cafe_connect.entity.Thali;
 import com.yash.cafe_connect.exception.ResourceNotFoundException;
+import com.yash.cafe_connect.repository.ThaliRepository;
 import com.yash.cafe_connect.repository.TokenRepository;
 import com.yash.cafe_connect.repository.UserRepository;
-import com.yash.cafe_connect.repository.ThaliRepository;
 import com.yash.cafe_connect.service.TokenService;
 import org.springframework.stereotype.Service;
 
@@ -23,34 +24,39 @@ public class TokenServiceImpl implements TokenService {
     public TokenServiceImpl(TokenRepository tokenRepository,
                             UserRepository userRepository,
                             ThaliRepository thaliRepository) {
+
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
         this.thaliRepository = thaliRepository;
     }
 
     @Override
-    public Token createToken(Long userId, Long thaliId, Boolean paid) {
+    public Token createToken(Long userId,
+                             Long thaliId,
+                             Boolean paid) {
 
-        // ✅ Fetch user
+        // Fetch user
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found with id: " + userId));
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId));
 
-        // ✅ Fetch thali
+        // Fetch thali
         Thali thali = thaliRepository.findById(thaliId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Thali not found with id: " + thaliId));
+                        new ResourceNotFoundException(
+                                "Thali not found with id: " + thaliId));
 
-        // ✅ Current date
+        // Current date
         LocalDate today = LocalDate.now();
 
-        // ✅ Generate next token number (per day)
+        // Generate next token number
         Integer nextTokenNumber = tokenRepository
                 .findTopByDateOrderByTokenNumberDesc(today)
                 .map(token -> token.getTokenNumber() + 1)
                 .orElse(1);
 
-        // ✅ Create token
+        // Create token
         Token token = new Token();
         token.setUser(user);
         token.setThali(thali);
@@ -58,22 +64,46 @@ public class TokenServiceImpl implements TokenService {
         token.setDate(today);
         token.setTokenNumber(nextTokenNumber);
 
-        // ✅ Save to DB
         return tokenRepository.save(token);
     }
 
     @Override
-    public List<Token> getAllTokens() {
-        return tokenRepository.findAll();
+    public List<TokenResponseDTO> getAllTokens() {
+
+        List<Token> tokens = tokenRepository.findAll();
+
+        return tokens.stream()
+                .map(token -> new TokenResponseDTO(
+                        token.getTokenNumber(),
+                        token.getUser().getName(),
+                        token.getThali().getType(),
+                        token.getThali().getPrice(),
+                        token.getPaid(),
+                        token.getDate()
+                ))
+                .toList();
     }
 
     @Override
-    public List<Token> getTokensByUser(Long userId) {
+    public List<TokenResponseDTO> getTokensByUser(Long userId) {
 
-        // Optional validation
+        // Validate user exists
         userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId));
 
-        return tokenRepository.findByUserId(userId);
+        List<Token> tokens = tokenRepository.findByUserId(userId);
+
+        return tokens.stream()
+                .map(token -> new TokenResponseDTO(
+                        token.getTokenNumber(),
+                        token.getUser().getName(),
+                        token.getThali().getType(),
+                        token.getThali().getPrice(),
+                        token.getPaid(),
+                        token.getDate()
+                ))
+                .toList();
     }
 }

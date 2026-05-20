@@ -1,7 +1,9 @@
 package com.yash.cafe_connect.controller;
 
+import com.yash.cafe_connect.dto.UserResponseDTO;
 import com.yash.cafe_connect.entity.User;
 import com.yash.cafe_connect.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,12 +19,14 @@ public class UserController {
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
+    public User createUser(@Valid @RequestBody User user) {
+
         return userService.createUser(user);
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserResponseDTO> getAllUsers() {
+
         return userService.getAllUsers();
     }
 }

@@ -13,16 +13,19 @@ public class ThaliServiceImpl implements ThaliService {
     private final ThaliRepository thaliRepository;
 
     public ThaliServiceImpl(ThaliRepository thaliRepository) {
+
         this.thaliRepository = thaliRepository;
     }
 
     @Override
     public Thali createThali(Thali thali) {
+
         return thaliRepository.save(thali);
     }
 
     @Override
     public List<Thali> getAllThali() {
+
         return thaliRepository.findAll();
     }
 }
